@@ -23,10 +23,12 @@ export default function App() {
     // Check Backend status & fetch demo presets on mount
     const initApp = async () => {
       const health = await checkHealthApi();
-      setModelStatus(health);
+      if (health && typeof health === 'object') {
+        setModelStatus(health);
+      }
 
       const serverDemos = await getDemoMessagesApi();
-      if (serverDemos && serverDemos.length > 0) {
+      if (Array.isArray(serverDemos) && serverDemos.length > 0) {
         setDemos(serverDemos);
       }
     };

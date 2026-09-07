@@ -11,7 +11,9 @@ const DEMO_ICONS = {
 };
 
 export default function DemoSelector({ demos, onSelectDemo }) {
-  if (!demos || demos.length === 0) return null;
+  const safeDemos = Array.isArray(demos) ? demos : [];
+
+  if (safeDemos.length === 0) return null;
 
   return (
     <div className="w-full max-w-3xl mx-auto mb-10">
@@ -24,23 +26,23 @@ export default function DemoSelector({ demos, onSelectDemo }) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {demos.map((demo) => {
-          const Icon = DEMO_ICONS[demo.id] || Sparkles;
+        {safeDemos.map((demo) => {
+          const Icon = (demo && demo.id && DEMO_ICONS[demo.id]) ? DEMO_ICONS[demo.id] : Sparkles;
 
           return (
             <button
-              key={demo.id}
-              onClick={() => onSelectDemo(demo.message)}
+              key={demo?.id || Math.random()}
+              onClick={() => onSelectDemo(demo?.message || '')}
               className="glass-card p-3 rounded-xl border border-slate-800 hover:border-cyan-500/40 hover:bg-cyan-500/5 text-left transition-all group"
             >
               <div className="flex items-center space-x-2 mb-1">
                 <Icon className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
                 <span className="text-xs font-semibold text-slate-200 line-clamp-1 group-hover:text-cyan-300">
-                  {demo.title}
+                  {demo?.title || 'Demo Message'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 line-clamp-2 leading-snug">
-                {demo.description}
+                {demo?.description || ''}
               </p>
             </button>
           );

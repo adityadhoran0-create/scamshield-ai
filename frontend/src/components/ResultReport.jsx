@@ -1,27 +1,30 @@
 import React, { useState } from 'react';
 import { 
   ShieldAlert, ShieldCheck, AlertTriangle, Cpu, CheckCircle2, 
-  Copy, Check, RefreshCw, FileText, ExternalLink, Info, Share2 
+  Copy, Check, RefreshCw, FileText, ExternalLink, Info 
 } from 'lucide-react';
 import RiskGauge from './RiskGauge';
 
 export default function ResultReport({ result, originalMessage, onReset }) {
   const [copied, setCopied] = useState(false);
 
+  const signals = Array.isArray(result?.signals) ? result.signals : [];
+  const recommendations = Array.isArray(result?.recommendations) ? result.recommendations : [];
+  const extractedUrls = Array.isArray(result?.extracted_urls) ? result.extracted_urls : [];
+  const urlThreats = Array.isArray(result?.url_threats) ? result.url_threats : [];
+
   const handleCopyReport = () => {
     const reportText = `[ScamShield AI Security Report]\n` +
-      `Risk Score: ${result.risk_score}/100 (${result.risk_level})\n` +
-      `Category: ${result.category}\n` +
-      `Signals: ${result.signals.join(', ') || 'None'}\n` +
-      `Explanation: ${result.explanation}\n` +
-      `Recommended Action: ${result.recommendations.join(' ')}`;
+      `Risk Score: ${result?.risk_score || 0}/100 (${result?.risk_level || 'UNKNOWN'})\n` +
+      `Category: ${result?.category || 'Unknown'}\n` +
+      `Signals: ${signals.join(', ') || 'None'}\n` +
+      `Explanation: ${result?.explanation || ''}\n` +
+      `Recommended Action: ${recommendations.join(' ')}`;
 
     navigator.clipboard.writeText(reportText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const isScam = result.risk_score >= 50;
 
   return (
     <div className="w-full max-w-4xl mx-auto my-8">
@@ -31,19 +34,19 @@ export default function ResultReport({ result, originalMessage, onReset }) {
         
         {/* Status Bar Top Line */}
         <div className={`absolute top-0 left-0 right-0 h-1.5 ${
-          result.risk_level === 'CRITICAL' ? 'bg-rose-500' :
-          result.risk_level === 'HIGH' ? 'bg-amber-500' :
-          result.risk_level === 'MEDIUM' ? 'bg-yellow-400' : 'bg-emerald-500'
+          result?.risk_level === 'CRITICAL' ? 'bg-rose-500' :
+          result?.risk_level === 'HIGH' ? 'bg-amber-500' :
+          result?.risk_level === 'MEDIUM' ? 'bg-yellow-400' : 'bg-emerald-500'
         }`}></div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-6">
           <div>
             <div className="flex items-center space-x-3 mb-1">
               <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Security Assessment Report</span>
-              <span className="text-xs font-mono text-slate-400">• {new Date(result.timestamp).toLocaleTimeString()}</span>
+              <span className="text-xs font-mono text-slate-400">• {result?.timestamp ? new Date(result.timestamp).toLocaleTimeString() : 'Just now'}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center space-x-3">
-              <span>{result.category}</span>
+              <span>{result?.category || 'Suspicious Message'}</span>
             </h2>
           </div>
 
@@ -67,7 +70,7 @@ export default function ResultReport({ result, originalMessage, onReset }) {
         </div>
 
         {/* Risk Score Gauge Component */}
-        <RiskGauge score={result.risk_score} riskLevel={result.risk_level} />
+        <RiskGauge score={result?.risk_score || 0} riskLevel={result?.risk_level || 'LOW'} />
 
         {/* 3-Column Breakdown Grid (ML, Rules, URL) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -80,7 +83,7 @@ export default function ResultReport({ result, originalMessage, onReset }) {
                 <span>ML Model Probability</span>
               </span>
             </div>
-            <p className="text-2xl font-bold font-mono text-white">{result.ml_probability}%</p>
+            <p className="text-2xl font-bold font-mono text-white">{result?.ml_probability ?? 0}%</p>
             <p className="text-[11px] text-slate-400 mt-1">TF-IDF + Logistic Regression inference</p>
           </div>
 
@@ -92,7 +95,7 @@ export default function ResultReport({ result, originalMessage, onReset }) {
                 <span>Rule Signal Score</span>
               </span>
             </div>
-            <p className="text-2xl font-bold font-mono text-white">{result.rule_score}%</p>
+            <p className="text-2xl font-bold font-mono text-white">{result?.rule_score ?? 0}%</p>
             <p className="text-[11px] text-slate-400 mt-1">12 heuristic threat patterns matched</p>
           </div>
 
@@ -104,9 +107,9 @@ export default function ResultReport({ result, originalMessage, onReset }) {
                 <span>URL Threat Score</span>
               </span>
             </div>
-            <p className="text-2xl font-bold font-mono text-white">{result.url_score}%</p>
+            <p className="text-2xl font-bold font-mono text-white">{result?.url_score ?? 0}%</p>
             <p className="text-[11px] text-slate-400 mt-1">
-              {result.extracted_urls.length > 0 ? `${result.extracted_urls.length} link(s) passively inspected` : 'No URLs detected'}
+              {extractedUrls.length > 0 ? `${extractedUrls.length} link(s) passively inspected` : 'No URLs detected'}
             </p>
           </div>
 
@@ -116,12 +119,12 @@ export default function ResultReport({ result, originalMessage, onReset }) {
         <div className="mb-6">
           <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3 flex items-center space-x-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>Detected Risk Indicators ({result.signals.length})</span>
+            <span>Detected Risk Indicators ({signals.length})</span>
           </h3>
 
-          {result.signals.length > 0 ? (
+          {signals.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {result.signals.map((sig, idx) => (
+              {signals.map((sig, idx) => (
                 <div
                   key={idx}
                   className="glass-card px-3.5 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-300 text-xs font-medium flex items-center space-x-2.5"
@@ -146,7 +149,7 @@ export default function ResultReport({ result, originalMessage, onReset }) {
             <span>Explainable AI Analysis</span>
           </h3>
           <p className="text-sm text-slate-200 leading-relaxed font-sans">
-            "{result.explanation}"
+            "{result?.explanation || 'No detailed explanation available.'}"
           </p>
         </div>
 
@@ -158,7 +161,7 @@ export default function ResultReport({ result, originalMessage, onReset }) {
           </h3>
 
           <div className="space-y-2">
-            {result.recommendations.map((rec, idx) => (
+            {recommendations.map((rec, idx) => (
               <div
                 key={idx}
                 className="glass-card p-3 rounded-xl border border-slate-800 text-xs text-slate-200 flex items-start space-x-3"
